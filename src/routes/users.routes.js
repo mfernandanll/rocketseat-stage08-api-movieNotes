@@ -18,6 +18,7 @@ function myMiddleware(request, response, next) {
 const usersController = new UsersController()
 
 usersRoutes.post('/', myMiddleware, usersController.create) //dessa forma, dizemos que essa rota tem o middleware
+usersRoutes.put('/:id', usersController.update)
 usersRoutes.use(myMiddleware) //dessa forma, passamos o middleware para todas as rotas
 
 module.exports = usersRoutes
