@@ -46,14 +46,14 @@ class MovieNotesController {
   }
 
   async index(request, response) {
-    const { title, tags } = request.query
+    const { search } = request.query
 
     const user_id = request.user.id;
     
     let notes
 
-    if (tags) {
-      const filterTags = tags.split(',').map(tag => tag.trim())
+    if (search) {
+      const keywords = search.split(" ").map((keyword) => `%${keyword}%`);
 
       notes = await knex("movie_tags")
         .select([
@@ -64,16 +64,24 @@ class MovieNotesController {
           "movie_notes.rating",
         ])
         .where("movie_notes.user_id", user_id)
-        .whereLike("movie_notes.title", `%${title}%`)
-        .whereIn("name", filterTags)
         .innerJoin("movie_notes", "movie_notes.id", "movie_tags.note_id")
+        .where((builder) => {
+          builder.where((builder2) => {
+            keywords.forEach((keyword) => {
+              builder2.orWhere("movie_tags.name", "like", keyword);
+            });
+          });
+          keywords.forEach((keyword) => {
+            builder.orWhere("movie_notes.title", "like", keyword);
+            builder.orWhere("movie_notes.description", "like", keyword);
+          });
+        })
         .groupBy("movie_notes.id")
         .orderBy("movie_notes.title")
 
     } else {
       notes = await knex("movie_notes")
         .where({ user_id })
-        .whereLike("title", `%${title}%`)
         .orderBy("title")
     }
 
